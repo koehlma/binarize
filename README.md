@@ -8,7 +8,7 @@ StructPack is an efficient, small and flexible binary serialization format.
     0b010           -> String (5-Bit Length)
     0b011           -> Bytes (5-Bit Length)
     0b100           -> List (5-Bit Length)
-    0b101           -> Map (5-Bit Length)
+    0b101           -> Hashtable (5-Bit Length)
     0b110
          00         -> Fixed Width Integer
            00           -> 8-Bit Integer
@@ -60,6 +60,8 @@ StructPack is an efficient, small and flexible binary serialization format.
          0
           0
            000      -> DATETIME
+           001      -> Regular Expression
+           010      -> POINTER
            ...      -> reserved
           1
            0        -> Described Type
