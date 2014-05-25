@@ -21,7 +21,6 @@ StructPack primitive data types
 
 import datetime
 import decimal
-import enum
 import ipaddress
 import struct
 import uuid
