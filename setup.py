@@ -25,7 +25,7 @@ from distutils.core import setup
 __path__ = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(__path__, 'src'))
 
-import structpack.version as version
+import binarize.version as version
 
 setup(name=version.__short_name__,
       version=version.__version__,
@@ -36,7 +36,7 @@ setup(name=version.__short_name__,
       url=version.__website__,
       download_url=version.__download_url__,
       license='GPLv3+',
-      packages=['structpack'],
+      packages=['binarize'],
       package_dir={'' : 'src'},
       classifiers=['Development Status :: 5 - Production/Stable',
                    'Intended Audience :: Developers',

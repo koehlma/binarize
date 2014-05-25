@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# StructPack documentation build configuration file, created by
+# Binarize documentation build configuration file, created by
 # sphinx-quickstart on Sun May 25 16:39:58 2014.
 #
 # This file is execfile()d with the current directory set to its

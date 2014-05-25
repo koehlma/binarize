@@ -15,7 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from .primitives import *
-from .structure import *
-from .type import *
-from .version import *
+import abc
+
+from collections import namedtuple
+
+class Type(metaclass=abc.ABCMeta):
+    name = None
+    
+    @classmethod
+    @abc.abstractmethod
+    def pack(cls, instance, **options):
+        raise NotImplemented()
+    
+    @classmethod
+    @abc.abstractmethod
+    def unpack(cls, data, pointer=0, **options):
+        raise NotImplemented()
+
+PrimitiveType = namedtuple('PrimitiveType', ['name', 'unpack', 'pack'])
+
+Type.register(PrimitiveType)
