@@ -16,7 +16,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 '''
-StructPack primitive data types
+Binarize primitive data types
 '''
 
 import datetime

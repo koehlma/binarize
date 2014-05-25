@@ -24,7 +24,7 @@ import os
 doc_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(doc_directory, '..', '..', 'src'))
 
-import structpack
+import binarize
 
 # -- General configuration ------------------------------------------------
 
@@ -53,7 +53,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'StructPack'
+project = 'Binarize'
 copyright = '2014, Maximilian Köhl'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -186,7 +186,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'StructPackdoc'
+htmlhelp_basename = 'Binarize'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -206,7 +206,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'StructPack.tex', 'StructPack Documentation',
+  ('index', 'binarize.tex', 'Binarize Documentation',
    'Maximilian Köhl', 'manual'),
 ]
 
@@ -236,7 +236,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'structpack', 'StructPack Documentation',
+    ('index', 'binarize', 'Binarize Documentation',
      ['Maximilian Köhl'], 1)
 ]
 
@@ -250,8 +250,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'StructPack', 'StructPack Documentation',
-   'Maximilian Köhl', 'StructPack', 'One line description of project.',
+  ('index', 'Binarize', 'Binarize Documentation',
+   'Maximilian Köhl', 'Binarize', 'One line description of project.',
    'Miscellaneous'),
 ]
 
