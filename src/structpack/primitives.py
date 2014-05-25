@@ -192,14 +192,14 @@ def _decimal_unpack_special(sign, integer):
 def _decimal_pack_special(decimal, size):
     if decimal.is_infinite():
         if decimal.is_signed():
-            yield b'\xf8' + b'\x00' * (size - 1)
+            return b'\xf8' + b'\x00' * (size - 1)
         else:
-            yield b'\x78' + b'\x00' * (size - 1)
+            return b'\x78' + b'\x00' * (size - 1)
     elif decimal.is_nan():
         if decimal.is_qnan():
-            yield b'\x7c' + b'\x00' * (size - 1)
+            return b'\x7c' + b'\x00' * (size - 1)
         else:
-            yield b'\x7e' + b'\x00' * (size - 1)
+            return b'\x7e' + b'\x00' * (size - 1)
     else:
         raise ValueError()
 
@@ -225,7 +225,7 @@ def pack_decimal32(decimal):
     Packs an IEEE 754-2008 32-bit decimal floating point number.
     '''
     if not decimal.is_finite():
-        yield from _decimal_pack_special(decimal, 4)
+        yield _decimal_pack_special(decimal, 4)
         return
     sign, digits, exponent = decimal.as_tuple()
     if len(digits) > 7 or (not -101 <= exponent <= 90):
@@ -260,7 +260,7 @@ def pack_decimal64(decimal):
     Packs an IEEE 754-2008 64-bit decimal floating point number.
     '''
     if not decimal.is_finite():
-        yield from _decimal_pack_special(decimal, 8)
+        yield _decimal_pack_special(decimal, 8)
         return
     sign, digits, exponent = decimal.as_tuple()
     if len(digits) > 16 or (not -398 <= exponent <= 369):
@@ -296,7 +296,7 @@ def pack_decimal128(decimal):
     Packs an IEEE 754-2008 128-bit decimal floating point number.
     '''
     if not decimal.is_finite():
-        yield from _decimal_pack_special(decimal, 16)
+        yield _decimal_pack_special(decimal, 16)
         return
     sign, digits, exponent = decimal.as_tuple()
     if len(digits) > 34 or (not -6176 <= exponent <= 6111):
