@@ -1,7 +1,61 @@
-# StructPack
-StructPack is an efficient, small and flexible binary serialization format.
+# Binarize
+Binarize is going to be an efficient, small and flexible binary serialization format. It will support serialization of dynamic objects, like lists or Hashtables as well as custom objects. It's still under heavy development and cannot be considered stable.
+
+## Example
+```python
+class TestEnum(enum.Enum):
+    TEST1 = 'string'
+    TEST2 = ('tuple', 1, 2, 3)
+
+class Test1(binarize.Structure):
+    field1 = binarize.UINT8
+    field2 = binarize.STRING(size=20)
+    field3 = binarize.UUID
+
+class Test2(Test1):
+    field4 = TestEnum
+    
+class Test3(binarize.Structure):
+    test2 = Test2
+    abc = binarize.STRING(size=3)
+```
+
+```
+<Structure:Test1 [<Field name="field1", type="<Primitive:UINT8>">,
+                  <Field name="field2", type="<Primitive:STRING, size=20>">,
+                  <Field name="field3", type="<Primitive:UUID>">]>
+<Structure:Test2 [<Field name="field1", type="<Primitive:UINT8>">,
+                  <Field name="field2", type="<Primitive:STRING, size=20>">,
+                  <Field name="field3", type="<Primitive:UUID>">,
+                  <Field name="field4", type="<Enum:TestEnum>">]>
+<Structure:Test3 [<Field name="test2", type="<StructureType:Test2 [
+                      <Field name="field1", type="<Primitive:UINT8>">,
+                      <Field name="field2", type="<Primitive:STRING, size=20>">,
+                      <Field name="field3", type="<Primitive:UUID>">,
+                      <Field name="field4", type="<Enum:TestEnum>">]>">,
+                  <Field name="abc", type="<Primitive:STRING, size=3>">]>
+
+<Structure:Test1 field1="34", field2="abcdef",
+                 field3="3550d7e7-ec96-4b09-a233-8ab2e11e4230">
+--> b'"abcdef              5P\xd7\xe7\xec\x96K\t\xa23\x8a\xb2\xe1\x1eB0'
+
+<Structure:Test2 field1="255", field2="abc123",
+                 field3="65501639-9f0c-4faf-8f55-11e568d7b6f5",
+                 field4="TestEnum.TEST2">
+--> (b'\xffabc123              eP\x169\x9f\x0cO\xaf\x8fU\x11\xe5h\xd7\xb6\xf5'
+     b'\x01')
+     
+<Structure:Test3 test2="<Structure:Test2 field1="255", field2="abc123",
+                            field3="65501639-9f0c-4faf-8f55-11e568d7b6f5",
+                            field4="TestEnum.TEST2">",
+                 abc="abc">
+--> (b'\xffabc123              eP\x169\x9f\x0cO\xaf\x8fU\x11\xe5h\xd7\xb6\xf5'
+     b'\x01abc')
+
+```
 
 ## Specification
+### Dynamic Serialization Format
     Constructor Codes:
     0b000           -> Positive 5-Bit Integer
     0b001           -> Negative 5-Bit Integer
