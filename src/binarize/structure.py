@@ -15,27 +15,58 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import abc
 import collections
+import enum
 
-from .type import Type
+from .primitives import *
+from .type import ABCType, Type
+
+__all__ = ['EnumType', 'Field', 'StructureMeta', 'StructureType', 'Structure']
+
+class EnumType(Type):
+    __slots__ = ['name', 'enum', 'items', 'size']
+    
+    def __init__(self, enum, varint=False, name=None):
+        self.name = name or enum.__name__
+        self.enum = enum
+        self.items = list(self.enum)
+        length = len(self.items)
+        if varint:
+            self._pack = pack_varint
+            self._unpack = unpack_varint
+            self.size = None
+        elif length < 256:
+            self._pack = pack_uint8
+            self._unpack = unpack_uint8
+            self.size = 1
+        elif length < 65536:
+            self._pack = pack_uint16
+            self._unpack = unpack_uint16
+            self.size = 2
+        else:
+            raise ValueError()
+    
+    def __str__(self):
+        return '<Enum:{}>'.format(self.name)
+    
+    def pack(self, enum):
+        yield from self._pack(self.items.index(enum))
+    
+    def unpack(self, data, pointer=0):
+        pointer, index = self._unpack(data, pointer)
+        return pointer, self.items[index]
 
 class Field():
-    __slots__ = ['type', 'store', 'options', 'name']
+    __slots__ = ['type', 'name']
        
-    def __init__(self, type_, name=None, store=False, **options):
+    def __init__(self, type_, name=None, **options):
         self.type = type_
-        self.store = store
-        self.options = options
         self.name = name
     
     def __str__(self):
-        if not self.options:
-            return '<Field name={}, type={}>'.format(self.name, self.type.name)
-        options = ', '.join('{}={}'.format(name, value)
-                            for name, value in self.options.items())
-        return '<Field name={}, type={}, {}>'.format(self.name, self.type.name,
-                                                     options)
-            
+        return '<Field name="{}", type="{}">'.format(self.name, self.type)
+        
 class StructureMeta(type):
     @classmethod
     def __prepare__(metacls, name, bases):
@@ -51,23 +82,58 @@ class StructureMeta(type):
             if isinstance(value, Field):
                 fields[name] = value
                 value.name = name
-            elif isinstance(value, Type):
-                fields[name] = Field(value)
+            elif isinstance(value, ABCType):
+                fields[name] = Field(value, name)
+            elif isinstance(getattr(value, 'type', None), ABCType):
+                fields[name] = Field(value.type, name)
+            elif isinstance(value, enum.EnumMeta):
+                fields[name] = Field(EnumType(value), name)
         if 'fields' in members:
             for name, field in members['fields']:
                 fields[name] = field
                 field.name = name
         for name in fields:
             if name in members:
-                del members[name]                
+                del members[name]
+        members['type'] = StructureType(members['name'], fields)               
         members['fields'] = fields
+        try:
+            members['size'] = sum(field.type.size for field in fields.values())
+        except TypeError:
+            members['size'] = None
         members['names'] = list(fields.keys())
-        return type.__new__(cls, name, bases, members)
+        NewStructure = type.__new__(cls, name, bases, members)
+        members['type'].structure = NewStructure
+        return NewStructure
     
     def __str__(cls):
         fields = ', '.join(str(field) for field in cls.fields.values())
         return '<Structure:{} [{}]>'.format(cls.name, fields)
+
+class StructureType(Type):
+    __slots__ = ['name', 'fields', 'structure']
     
+    def __init__(self, name, fields, structure=None):
+        self.name = name
+        self.fields = fields
+        self.structure = structure
+    
+    def __str__(self):
+        fields = ', '.join(str(field) for field in self.fields.values())
+        return '<StructureType:{} [{}]>'.format(self.name, fields)
+    
+    def pack(self, structure):
+        for name, field in self.fields.items():
+            yield from field.type.pack(structure[name])
+   
+    def unpack(self, data, pointer=0):
+        values = []
+        for field in self.fields.values():
+            pointer, value = field.type.unpack(data, pointer)
+            values.append(value)
+        return pointer, self.structure(*values)
+
+
 class Structure(metaclass=StructureMeta):
     __slots__ = ['values']
       
@@ -77,7 +143,7 @@ class Structure(metaclass=StructureMeta):
         self.values = values
     
     def __str__(self):
-        fields = ', '.join('{}={}'.format(name, self.values[name])
+        fields = ', '.join('{}="{}"'.format(name, self.values[name])
                            for name in self.names)
         return '<Structure:{} {}>'.format(self.name, fields)
     
@@ -102,23 +168,8 @@ class Structure(metaclass=StructureMeta):
             super().__setattr__(name, value)
             
     def encode(self):
-        return b''.join(self.pack(self))
+        return b''.join(self.type.pack(self))
     
     @classmethod
     def decode(cls, data):
-        return cls.unpack(data)[1]
-    
-    @classmethod
-    def pack(cls, structure):
-        for name, field in cls.fields.items():
-            yield from field.type.pack(structure.values[name], **field.options)
-    
-    @classmethod
-    def unpack(cls, data, pointer=0):
-        values = []
-        for field in cls.fields.values():
-            pointer, value = field.type.unpack(data, pointer, **field.options)
-            values.append(value)
-        return pointer, cls(*values)
-    
-Type.register(Structure)
+        return cls.type.unpack(data)[1]

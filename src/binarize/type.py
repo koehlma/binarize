@@ -17,21 +17,49 @@
 
 import abc
 
-from collections import namedtuple
+__all__ = ['ABCType', 'register', 'Type']
 
-class Type(metaclass=abc.ABCMeta):
-    name = None
-    
-    @classmethod
+class ABCType(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def pack(cls, instance, **options):
+    def __len__(self):
+        return self.size
+    
+    @property
+    @abc.abstractmethod
+    def name(self):
         raise NotImplemented()
     
-    @classmethod
+    @property
     @abc.abstractmethod
-    def unpack(cls, data, pointer=0, **options):
+    def size(self):
+        raise NotImplemented()
+        
+    @abc.abstractmethod
+    def pack(self, obj, **options):
+        raise NotImplemented()
+    
+    @abc.abstractmethod
+    def unpack(self, data, pointer=0, **options):
         raise NotImplemented()
 
-PrimitiveType = namedtuple('PrimitiveType', ['name', 'unpack', 'pack'])
+register = ABCType.register
 
-Type.register(PrimitiveType)
+class Type():
+    def __len__(self):
+        return self.size
+        
+    @property
+    def name(self):
+        raise NotImplemented()
+    
+    @property
+    def size(self):
+        raise NotImplemented()
+    
+    def pack(self, obj, **options):
+        raise NotImplemented()
+    
+    def unpack(self, data, pointer=0, **options):
+        raise NotImplemented()
+
+ABCType.register(Type)

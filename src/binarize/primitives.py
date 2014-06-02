@@ -15,161 +15,205 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+'''
+Binarize - Primitive Data Types
+'''
+
 import datetime
 import decimal
+import functools
 import ipaddress
 import struct
 import uuid
 
-from .type import PrimitiveType
+from .type import Type
 
-__all__ = ['unpack_sint8', 'pack_sint8', 'unpack_uint8', 'pack_uint8',
-           'unpack_sint16', 'pack_sint16', 'unpack_uint16', 'pack_uint16', 
-           'unpack_sint32', 'pack_sint32', 'unpack_uint32', 'pack_uint32', 
+__all__ = ['Primitive',
+           'struct_sint8', 'struct_uint8', 'struct_sint16', 'struct_uint16',
+           'struct_sint32', 'struct_uint32', 'struct_sint64', 'struct_uint64',
+           'unpack_sint8', 'pack_sint8', 'unpack_uint8', 'pack_uint8',
+           'unpack_sint16', 'pack_sint16', 'unpack_uint16', 'pack_uint16',
+           'unpack_sint32', 'pack_sint32', 'unpack_uint32', 'pack_uint32',
            'unpack_sint64', 'pack_sint64', 'unpack_uint64', 'pack_uint64',
            'unpack_float', 'pack_float', 'unpack_double', 'pack_double',
-           'unpack_decimal32', 'pack_decimal32', 'unpack_decimal64',
-           'pack_decimal64', 'unpack_decimal128', 'pack_decimal128',
-           'unpack_varint', 'pack_varint', 'unpack_length', 'pack_length',
+           'unpack_decimal32', 'pack_decimal32',
+           'unpack_decimal64', 'pack_decimal64',
+           'unpack_decimal128', 'pack_decimal128',
+           'unpack_varint', 'pack_varint', 'unpack_size', 'pack_size',
            'unpack_uuid', 'pack_uuid', 'unpack_ipv4', 'pack_ipv4',
            'unpack_ipv6', 'pack_ipv6', 'unpack_date', 'pack_date',
            'unpack_time', 'pack_time', 'unpack_bytes', 'pack_bytes',
-           'unpack_string', 'pack_string', 'unpack_boolean', 'pack_boolean',
+           'unpack_string', 'pack_string', 'unpack_boolean', 'pack_boolean', 
            'SINT8', 'UINT8', 'SINT16', 'UINT16', 'SINT32', 'UINT32', 'SINT64',
            'UINT64', 'FLOAT', 'DOUBLE', 'DECIMAL32', 'DECIMAL64', 'DECIMAL128',
-           'VARINT', 'LENGTH', 'UUID', 'IPV4', 'IPV6', 'DATE', 'TIME', 'BYTES',
+           'VARINT', 'SIZE', 'UUID', 'IPV4', 'IPV6', 'DATE', 'TIME', 'BYTES',
            'STRING', 'BOOLEAN']
 
-_struct_sint8 = struct.Struct('!b')
-_struct_uint8 = struct.Struct('!B')
-_struct_sint16 = struct.Struct('!h')
-_struct_uint16 = struct.Struct('!H')
-_struct_sint32 = struct.Struct('!i')
-_struct_uint32 = struct.Struct('!I')
-_struct_sint64 = struct.Struct('!q')
-_struct_uint64 = struct.Struct('!Q')
-_struct_float = struct.Struct('!f')
-_struct_double = struct.Struct('!d')
+class Primitive(Type):
+    __slots__ = ['name', 'unpack', 'pack', 'size', 'options', 'base']
+    
+    def __init__(self, name, unpack, pack, size=None, options=None, base=None):
+        self.name = name
+        self.unpack = unpack
+        self.pack = pack
+        self.options = options or {}
+        self.size = size or self.options.get('size', None)
+        self.base = base
+
+    def __call__(self, **options):
+        new_options = dict(self.options)
+        new_options.update(options)
+        unpack = functools.partial(self.unpack, **new_options)
+        functools.update_wrapper(unpack, self.unpack)
+        pack = functools.partial(self.pack, **new_options)
+        functools.update_wrapper(pack, self.pack)        
+        return Primitive(self.name, unpack, pack, self.size, new_options,
+                         self.base or self)
+    
+    def __eq__(self, other):
+        assert isinstance(other, Primitive)
+        if self.base is None and other.base is None:
+            return id(self) == id(other)
+        return self.base == other.base and self.options == other.options
+    
+    def __str__(self):
+        if self.options:
+            options = ', '.join('{}={}'.format(name, value)
+                                for name, value in self.options.items())
+            return '<Primitive:{}, {}>'.format(self.name, options)
+        else:
+            return '<Primitive:{}>'.format(self.name)
+
+struct_sint8 = struct.Struct('!b')
+struct_uint8 = struct.Struct('!B')
+struct_sint16 = struct.Struct('!h')
+struct_uint16 = struct.Struct('!H')
+struct_sint32 = struct.Struct('!i')
+struct_uint32 = struct.Struct('!I')
+struct_sint64 = struct.Struct('!q')
+struct_uint64 = struct.Struct('!Q')
+struct_float = struct.Struct('!f')
+struct_double = struct.Struct('!d')
 
 def unpack_sint8(data, pointer=0):
     '''
     Unpacks a signed 8-bit integer.
     '''
-    return pointer + 1, _struct_sint8.unpack(data[pointer:pointer + 1])[0]
+    return pointer + 1, struct_sint8.unpack(data[pointer:pointer + 1])[0]
 
 def pack_sint8(integer):
     '''
     Packs a signed 8-bit integer.
     '''
-    yield _struct_sint8.pack(integer)
+    yield struct_sint8.pack(integer)
 
 def unpack_uint8(data, pointer=0):
     '''
     Unpacks an unsigned 8-bit integer.
     '''
-    return pointer + 1, _struct_uint8.unpack(data[pointer:pointer + 1])[0]
+    return pointer + 1, struct_uint8.unpack(data[pointer:pointer + 1])[0]
 
 def pack_uint8(integer):
     '''
     Packs an unsigned 8-bit integer.
     '''
-    yield _struct_uint8.pack(integer)
+    yield struct_uint8.pack(integer)
 
 def unpack_sint16(data, pointer=0):
     '''
     Unpacks a signed 16-bit integer.
     '''
-    return pointer + 2, _struct_sint16.unpack(data[pointer:pointer + 2])[0]
+    return pointer + 2, struct_sint16.unpack(data[pointer:pointer + 2])[0]
     
 def pack_sint16(integer):
     '''
     Packs a signed 16-bit integer.
     '''
-    yield _struct_sint16.pack(integer)
+    yield struct_sint16.pack(integer)
 
 def unpack_uint16(data, pointer=0):
     '''
     Unpacks an unsigned 16-bit integer.
     '''
-    return pointer + 2, _struct_uint16.unpack(data[pointer:pointer + 2])[0]
+    return pointer + 2, struct_uint16.unpack(data[pointer:pointer + 2])[0]
 
 def pack_uint16(integer):
     '''
     Packs an unsigned 16-bit integer.
     '''
-    yield _struct_uint16.pack(integer)
+    yield struct_uint16.pack(integer)
 
 def unpack_sint32(data, pointer=0):
     '''
     Unpacks a signed 32-bit integer.
     '''
-    return pointer + 4, _struct_sint32.unpack(data[pointer:pointer + 4])[0]
+    return pointer + 4, struct_sint32.unpack(data[pointer:pointer + 4])[0]
 
 def pack_sint32(integer):
     '''
     Packs a signed 32-bit integer.
     '''
-    yield _struct_sint32.pack(integer)
+    yield struct_sint32.pack(integer)
 
 def unpack_uint32(data, pointer=0):
     '''
     Unpacks an unsigned 32-bit integer.
     '''
-    return pointer + 4, _struct_uint32.unpack(data[pointer:pointer + 4])[0]
+    return pointer + 4, struct_uint32.unpack(data[pointer:pointer + 4])[0]
 
 def pack_uint32(integer):
     '''
     Packs an unsigned 32-bit integer.
     '''
-    yield _struct_uint32.pack(integer)
+    yield struct_uint32.pack(integer)
 
 def unpack_sint64(data, pointer=0):
     '''
     Unpacks a signed 64-bit integer.
     '''
-    return pointer + 8, _struct_sint64.unpack(data[pointer:pointer + 8])[0]
+    return pointer + 8, struct_sint64.unpack(data[pointer:pointer + 8])[0]
     
 def pack_sint64(integer):
     '''
     Packs a signed 64-bit integer.
     '''
-    yield _struct_sint64.pack(integer)
+    yield struct_sint64.pack(integer)
 
 def unpack_uint64(data, pointer=0):
     '''
     Unpacks an unsigned 64-bit integer.
     '''
-    return pointer + 8, _struct_uint64.unpack(data[pointer:pointer + 8])[0]
+    return pointer + 8, struct_uint64.unpack(data[pointer:pointer + 8])[0]
     
 def pack_uint64(integer):
     '''
     Packs an unsigned 64-bit integer.
     '''
-    yield _struct_uint64.pack(integer)
+    yield struct_uint64.pack(integer)
 
 def unpack_float(data, pointer=0):
     '''
     Unpacks an IEEE 754 single precision float. 
     '''
-    return pointer + 4, _struct_float.unpack(data[pointer:pointer + 4])[0]
+    return pointer + 4, struct_float.unpack(data[pointer:pointer + 4])[0]
     
 def pack_float(number):
     '''
     Packs an IEEE 754 single precision float.
     '''
-    yield _struct_float.pack(number)
+    yield struct_float.pack(number)
    
 def unpack_double(data, pointer=0):
     '''
     Unpacks an IEEE 754 double precision float. 
     '''
-    return pointer + 8, _struct_double.unpack(data[pointer:pointer + 8])[0]
+    return pointer + 8, struct_double.unpack(data[pointer:pointer + 8])[0]
 
 def pack_double(number):
     '''
     Packs an IEEE 754 double precision float.
     '''
-    yield _struct_double.pack(number)
+    yield struct_double.pack(number)
 
 def _decimal_unpack_special(sign, integer):
     if (integer >> 3) & 1:
@@ -326,50 +370,50 @@ def pack_varint(integer):
         integer >>= 7
     yield bytes([integer])
 
-def _unpack_length_8(data, pointer=0):
-    length = (int.from_bytes(data[pointer:pointer + 2], 'big') & 8191) + 128 
-    return pointer + 2, length
+def _unpack_size_8(data, pointer=0):
+    size = (int.from_bytes(data[pointer:pointer + 2], 'big') & 8191) + 128 
+    return pointer + 2, size
 
-def _unpack_length_16(data, pointer=0):
-    length = (int.from_bytes(data[pointer:pointer + 3], 'big') & 2097151) + 8320
-    return pointer + 3, length
+def _unpack_size_16(data, pointer=0):
+    size = (int.from_bytes(data[pointer:pointer + 3], 'big') & 2097151) + 8320
+    return pointer + 3, size
 
-def _unpack_length_32(data, pointer=0):
-    length = (int.from_bytes(data[pointer:pointer + 5], 'big') &
+def _unpack_size_32(data, pointer=0):
+    size = (int.from_bytes(data[pointer:pointer + 5], 'big') &
               137438953471) + 2105472
-    return pointer + 5, length
+    return pointer + 5, size
 
-def _unpack_length_64(data, pointer=0):
-    length = (int.from_bytes(data[pointer:pointer + 9], 'big') &
+def _unpack_size_64(data, pointer=0):
+    size = (int.from_bytes(data[pointer:pointer + 9], 'big') &
               590295810358705651711) + 137441058944
-    return pointer + 9, length
+    return pointer + 9, size
 
-_LENGTH_SIZES = [_unpack_length_8, _unpack_length_16, _unpack_length_32,
-                 _unpack_length_64]
+_SIZES = [_unpack_size_8, _unpack_size_16, _unpack_size_32,
+          _unpack_size_64]
 
-def unpack_length(data, pointer=0):
+def unpack_size(data, pointer=0):
     '''
-    Unpacks a length.
+    Unpacks a size.
     '''
     if data[pointer] >> 7:
-        return _LENGTH_SIZES[(data[pointer] >> 5) & 3](data, pointer)
+        return _SIZES[(data[pointer] >> 5) & 3](data, pointer)
     else:
         return pointer + 1, data[pointer]
 
-def pack_length(length):
+def pack_size(size):
     '''
-    Packs a length.
+    Packs a size.
     '''
-    if length < 128:
-        yield bytes([length])
-    elif length < 8320:
-        yield (32768 | (length - 128)).to_bytes(2, 'big')
-    elif length < 2105472:
-        yield (10485760 | (length - 8320)).to_bytes(3, 'big')
-    elif length < 137441058944:
-        yield (824633720832 | (length - 2105472)).to_bytes(5, 'big')
-    elif length < 590295810496146710656:
-        yield (4132070672510939561984 | (length - 137441058944)
+    if size < 128:
+        yield bytes([size])
+    elif size < 8320:
+        yield (32768 | (size - 128)).to_bytes(2, 'big')
+    elif size < 2105472:
+        yield (10485760 | (size - 8320)).to_bytes(3, 'big')
+    elif size < 137441058944:
+        yield (824633720832 | (size - 2105472)).to_bytes(5, 'big')
+    elif size < 590295810496146710656:
+        yield (4132070672510939561984 | (size - 137441058944)
                ).to_bytes(9, 'big')
     else:
         raise ValueError()
@@ -475,40 +519,40 @@ def pack_time(time):
             size += 2
     yield integer.to_bytes(size, 'big')
 
-def unpack_bytes(data, pointer=0, length=-1):
+def unpack_bytes(data, pointer=0, size=-1, fill=b'\x00'):
     '''
     Unpacks Bytes.
     '''
-    if length < 0:
-        pointer, length = unpack_length(data, pointer)
-    return pointer + length, data[pointer:pointer + length]
+    if size < 0:
+        pointer, size = unpack_size(data, pointer)
+    return pointer + size, data[pointer:pointer + size]
 
-def pack_bytes(bytes_, length=-1, fill=b'\x00'):
+def pack_bytes(bytes_, size=-1, fill=b'\x00'):
     '''
     Packs Bytes.
     '''
-    if length < 0:
-        yield from pack_length(len(bytes_))
+    if size < 0:
+        yield from pack_size(len(bytes_))
         yield bytes_
     else:
-        missing = length - len(bytes_)
+        missing = size - len(bytes_)
         if missing < 0 or (missing > 0 and fill is None):
             raise ValueError()
         yield bytes_
         yield fill * missing
 
-def unpack_string(data, pointer=0, length=-1, encoding='utf-8'):
+def unpack_string(data, pointer=0, size=-1, fill=b' ', encoding='utf-8'):
     '''
     Unpacks a string.
     '''
-    pointer, bytes_ = unpack_bytes(data, pointer, length)
+    pointer, bytes_ = unpack_bytes(data, pointer, size)
     return pointer, bytes_.decode(encoding)
 
-def pack_string(string, length=-1, fill=b' ', encoding='utf-8'):
+def pack_string(string, size=-1, fill=b' ', encoding='utf-8'):
     '''
     Packs a string.
     '''
-    yield from pack_bytes(string.encode(encoding), length, fill)
+    yield from pack_bytes(string.encode(encoding), size, fill)
 
 def unpack_boolean(data, pointer=0):
     '''
@@ -527,34 +571,34 @@ def pack_boolean(boolean):
     else:
         yield b'\x00'
 
-SINT8 = PrimitiveType('SINT8', unpack_sint8, pack_sint8)
-UINT8 = PrimitiveType('UINT8', unpack_uint8, pack_uint8)
-SINT16 = PrimitiveType('SINT16', unpack_sint16, pack_sint16)
-UINT16 = PrimitiveType('UINT16', unpack_uint16, pack_uint16)
-SINT32 = PrimitiveType('SINT32', unpack_sint32, pack_sint32)
-UINT32 = PrimitiveType('UINT32', unpack_uint32, pack_uint32)
-SINT64 = PrimitiveType('SINT64', unpack_sint64, pack_sint64)
-UINT64 = PrimitiveType('UINT64', unpack_uint64, pack_uint64)
-FLOAT = PrimitiveType('FLOAT', unpack_float, pack_float)
-DOUBLE = PrimitiveType('DOUBLE', unpack_double, pack_double)
+SINT8 = Primitive('SINT8', unpack_sint8, pack_sint8, 1)
+UINT8 = Primitive('UINT8', unpack_uint8, pack_uint8, 1)
+SINT16 = Primitive('SINT16', unpack_sint16, pack_sint16, 2)
+UINT16 = Primitive('UINT16', unpack_uint16, pack_uint16, 2)
+SINT32 = Primitive('SINT32', unpack_sint32, pack_sint32, 4)
+UINT32 = Primitive('UINT32', unpack_uint32, pack_uint32, 4)
+SINT64 = Primitive('SINT64', unpack_sint64, pack_sint64, 8)
+UINT64 = Primitive('UINT64', unpack_uint64, pack_uint64, 8)
+FLOAT = Primitive('FLOAT', unpack_float, pack_float, 4)
+DOUBLE = Primitive('DOUBLE', unpack_double, pack_double, 8)
 
-DECIMAL32 = PrimitiveType('DECIMAL32', unpack_decimal32, pack_decimal32)
-DECIMAL64 = PrimitiveType('DECIMAL64', unpack_decimal64, pack_decimal64)
-DECIMAL128 = PrimitiveType('DECIMAL128', unpack_decimal128, pack_decimal128)
+DECIMAL32 = Primitive('DECIMAL32', unpack_decimal32, pack_decimal32, 4)
+DECIMAL64 = Primitive('DECIMAL64', unpack_decimal64, pack_decimal64, 8)
+DECIMAL128 = Primitive('DECIMAL128', unpack_decimal128, pack_decimal128, 16)
 
-VARINT = PrimitiveType('VARINT', unpack_varint, pack_varint)
+VARINT = Primitive('VARINT', unpack_varint, pack_varint)
 
-LENGTH = PrimitiveType('LENGTH', unpack_length, pack_length)
+SIZE = Primitive('SIZE', unpack_size, pack_size)
 
-UUID = PrimitiveType('UUID', unpack_uuid, pack_uuid)
+UUID = Primitive('UUID', unpack_uuid, pack_uuid, 16)
 
-IPV4 = PrimitiveType('IPV4', unpack_ipv4, pack_ipv4)
-IPV6 = PrimitiveType('IPV6', unpack_ipv6, pack_ipv6)
+IPV4 = Primitive('IPV4', unpack_ipv4, pack_ipv4, 4)
+IPV6 = Primitive('IPV6', unpack_ipv6, pack_ipv6, 16)
 
-DATE = PrimitiveType('DATE', unpack_date, pack_date)
-TIME = PrimitiveType('TIME', unpack_time, pack_time)
+DATE = Primitive('DATE', unpack_date, pack_date)
+TIME = Primitive('TIME', unpack_time, pack_time)
 
-BYTES = PrimitiveType('BYTES', unpack_bytes, pack_bytes)
-STRING = PrimitiveType('STRING', unpack_string, pack_string)
+BYTES = Primitive('BYTES', unpack_bytes, pack_bytes)
+STRING = Primitive('STRING', unpack_string, pack_string)
 
-BOOLEAN = PrimitiveType('BOOLEAN', unpack_boolean, pack_boolean)
+BOOLEAN = Primitive('BOOLEAN', unpack_boolean, pack_boolean, 1)
