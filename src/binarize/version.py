@@ -25,8 +25,8 @@ __download_url__ = 'https://github.com/socialcube/binarize/tarball/master'
 __source__ = 'https://github.com/socialcube/binarize/'
 __vcs__ = 'git://github.com/socialcube/binarize.git'
 __copyright__ = 'Copyright (C) 2014, Maximilian Köhl'
-__desc_short__ = ''
-__desc_long__ = ''
+__desc_short__ = 'an efficient, small and flexible binary serialization format'
+__desc_long__ = 'an efficient, small and flexible binary serialization format'
 
 __all__ = ['__version__', '__project__', '__short_name__', '__author__',
            '__email__', '__website__', '__download_url__', '__source__',
