@@ -29,6 +29,7 @@ _libsodium.sodium_version_string.restype = ctypes.c_char_p
 _libsodium.crypto_box_primitive.restype = ctypes.c_char_p
 _libsodium.crypto_secretbox_primitive.restype = ctypes.c_char_p
 _libsodium.crypto_sign_primitive.restype = ctypes.c_char_p
+_libsodium.crypto_auth_primitive.restype = ctypes.c_char_p
 
 _libsodium.sodium_init()
 
@@ -158,15 +159,18 @@ class SecretBox():
     
     @staticmethod
     def generate_key():
-        return randombytes(SecretBox.KEY_SIZE)
+        return Key(randombytes(SecretBox.KEY_SIZE))
     
     @classmethod
     def generate(cls):
         return cls(SecretBox.generate_key())
     
     def __init__(self, key):
-        self._key = key
-        assert len(self._key) == SecretBox.KEY_SIZE
+        assert len(key) == SecretBox.KEY_SIZE
+        if isinstance(key, Key):
+            self._key = key
+        else:
+            self._key = Key(key)
 
     @property
     def key(self):
@@ -216,7 +220,7 @@ class Signing():
         
     @staticmethod
     def generate_seed():
-        return randombytes(Signing.SEED_SIZE)
+        return Key(randombytes(Signing.SEED_SIZE))
     
     @staticmethod
     def generate_keypair(seed=None):
@@ -286,7 +290,51 @@ class Signing():
                                                signed_message, length,
                                                self._verify_key)
         return signed_message[Signing.SIGNATURE_SIZE:]
+
+class Auth():
+    TOKEN_SIZE = _libsodium.crypto_auth_bytes()
+    KEY_SIZE = _libsodium.crypto_auth_keybytes()    
+    PRIMITIVE = _libsodium.crypto_auth_primitive()
     
+    class Message(bytes):
+        @property
+        def token(self):
+            return self[:Auth.TOKEN_SIZE]
+        
+        @property
+        def message(self):
+            return self[Auth.TOKEN_SIZE:]
+    
+    @staticmethod
+    def generate_key():
+        return Key(randombytes(Auth.KEY_SIZE))
+    
+    @classmethod
+    def generate(cls):
+        return cls(Auth.generate_key())
+    
+    def __init__(self, key):
+        assert len(key) == Auth.KEY_SIZE
+        if isinstance(key, Key):
+            self._key = key
+        else:
+            self._key = Key(key)
+    
+    def auth(self, message):
+        length = len(message)
+        token = ctypes.create_string_buffer(Auth.TOKEN_SIZE)
+        assert not _libsodium.crypto_auth(token, message, length, self._key)
+        return Auth.Message(token.raw + message)
+    
+    def verify(self, message, token=None):
+        if not token:
+             token = message[:Auth.TOKEN_SIZE]
+             message = message[Auth.TOKEN_SIZE:]
+        length = len(message)
+        assert not _libsodium.crypto_auth_verify(token, message, length,
+                                                 self._key)
+        return message
+
 if __name__ == '__main__':
     pbob, sbob = Box.generate_keypair()
     palice, salice = Box.generate_keypair()
@@ -326,3 +374,14 @@ if __name__ == '__main__':
     
     message = alice.sign(b'Hello Bob!')
     print(bob_alice.verify(message))
+    
+    secret = Auth.generate_key()
+    
+    bob = Auth(secret)
+    alice = Auth(secret)
+    
+    message = bob.auth(b'Hello Alice!')
+    print(alice.verify(message))
+    
+    message = alice.auth(b'Hello Bob!')
+    print(bob.verify(message))
