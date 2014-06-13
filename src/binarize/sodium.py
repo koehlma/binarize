@@ -336,6 +336,7 @@ class Auth():
         return message
 
 if __name__ == '__main__':
+    # Public Key Cryptography
     pbob, sbob = Box.generate_keypair()
     palice, salice = Box.generate_keypair()
     
@@ -348,7 +349,8 @@ if __name__ == '__main__':
     message = alice.encrypt(b'Hello Bob!')
     print(bob.decrypt(message))
 
-
+    
+    # Secret Key Cryptography
     secret = SecretBox.generate_key()
 
     bob = SecretBox(secret)
@@ -363,6 +365,8 @@ if __name__ == '__main__':
     vbob, sbob = Signing.generate_keypair()
     valice, salice = Signing.generate_keypair()
     
+    
+    # Digital Signatures
     bob = Signing(vbob, sbob)
     alice = Signing(valice, salice)
     
@@ -377,6 +381,8 @@ if __name__ == '__main__':
     
     secret = Auth.generate_key()
     
+    
+    # HMAC based Authentication
     bob = Auth(secret)
     alice = Auth(secret)
     
