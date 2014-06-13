@@ -291,7 +291,7 @@ class Signing():
                                                self._verify_key)
         return signed_message[Signing.SIGNATURE_SIZE:]
 
-class Auth():
+class Authentication():
     TOKEN_SIZE = _libsodium.crypto_auth_bytes()
     KEY_SIZE = _libsodium.crypto_auth_keybytes()    
     PRIMITIVE = _libsodium.crypto_auth_primitive()
