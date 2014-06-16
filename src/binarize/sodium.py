@@ -235,8 +235,9 @@ class Signing():
         return Key(verify_key), Key(sign_key)
     
     @classmethod
-    def generate(cls):
-        return cls(*Signer.generate_keypair())
+    def generate(cls, seed=None):
+        verify_key, sign_key = Signer.generate_keypair(seed)
+        return cls(verify_key, sign_key, seed)
     
     def __init__(self, verify_key, sign_key=None, seed=None):
         if isinstance(verify_key, Key):
@@ -299,22 +300,22 @@ class Authentication():
     class Message(bytes):
         @property
         def token(self):
-            return self[:Auth.TOKEN_SIZE]
+            return self[:Authentication.TOKEN_SIZE]
         
         @property
         def message(self):
-            return self[Auth.TOKEN_SIZE:]
+            return self[Authentication.TOKEN_SIZE:]
     
     @staticmethod
     def generate_key():
-        return Key(randombytes(Auth.KEY_SIZE))
+        return Key(randombytes(Authentication.KEY_SIZE))
     
     @classmethod
     def generate(cls):
-        return cls(Auth.generate_key())
+        return cls(Authentication.generate_key())
     
     def __init__(self, key):
-        assert len(key) == Auth.KEY_SIZE
+        assert len(key) == Authentication.KEY_SIZE
         if isinstance(key, Key):
             self._key = key
         else:
@@ -322,14 +323,14 @@ class Authentication():
     
     def auth(self, message):
         length = len(message)
-        token = ctypes.create_string_buffer(Auth.TOKEN_SIZE)
+        token = ctypes.create_string_buffer(Authentication.TOKEN_SIZE)
         assert not _libsodium.crypto_auth(token, message, length, self._key)
-        return Auth.Message(token.raw + message)
+        return Authentication.Message(token.raw + message)
     
     def verify(self, message, token=None):
         if not token:
-             token = message[:Auth.TOKEN_SIZE]
-             message = message[Auth.TOKEN_SIZE:]
+             token = message[:Authentication.TOKEN_SIZE]
+             message = message[Authentication.TOKEN_SIZE:]
         length = len(message)
         assert not _libsodium.crypto_auth_verify(token, message, length,
                                                  self._key)
@@ -362,11 +363,11 @@ if __name__ == '__main__':
     message = alice.encrypt(b'Hello Bob!')
     print(bob.decrypt(message))
     
-    vbob, sbob = Signing.generate_keypair()
-    valice, salice = Signing.generate_keypair()
-    
     
     # Digital Signatures
+    vbob, sbob = Signing.generate_keypair()
+    valice, salice = Signing.generate_keypair()
+        
     bob = Signing(vbob, sbob)
     alice = Signing(valice, salice)
     
@@ -379,12 +380,12 @@ if __name__ == '__main__':
     message = alice.sign(b'Hello Bob!')
     print(bob_alice.verify(message))
     
-    secret = Auth.generate_key()
-    
     
     # HMAC based Authentication
-    bob = Auth(secret)
-    alice = Auth(secret)
+    secret = Authentication.generate_key()
+       
+    bob = Authentication(secret)
+    alice = Authentication(secret)
     
     message = bob.auth(b'Hello Alice!')
     print(alice.verify(message))
