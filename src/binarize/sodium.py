@@ -16,6 +16,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import base64
+import binascii
 import collections
 import ctypes
 import ctypes.util
@@ -44,12 +45,12 @@ version = _Version(version_string, version_major, version_minor)
 def randombytes(size):
     buffer = ctypes.create_string_buffer(size)
     _libsodium.randombytes(buffer, size)
-    return buffer.raw
+    return buffer.raw 
 
-class Key(bytes):
+class EncodeableBytesMixin():
     @classmethod
     def from_hex(cls, key):
-        return cls(base64.b16decode(key.upper().encode('ascii')))
+        return cls(binascii.unhexlify(key.upper().encode('ascii')))
     
     @classmethod
     def from_base32(cls, key):
@@ -61,7 +62,7 @@ class Key(bytes):
     
     @property
     def hex(self):
-        return base64.b16encode(self).decode('ascii')
+        return binascii.hexlify(self).decode('ascii')
     
     @property
     def base32(self):
@@ -70,7 +71,28 @@ class Key(bytes):
     @property
     def base64(self):
         return base64.b64encode(self).decode('ascii')
+
+class HashableBytesMixin():
+    @property
+    def sha256(self):
+        return hash_sha256(self)
     
+    @property
+    def sha512(self):
+        return hash_sha512(self)
+    
+class Key(bytes, EncodeableBytesMixin, HashableBytesMixin):
+    def __str__(self):
+        return '<Key: "{}">'.format(self.base64)
+
+class Seed(bytes, EncodeableBytesMixin, HashableBytesMixin):
+    def __str__(self):
+        return '<Seed: "{}">'.format(self.hex)
+
+class Digest(bytes, EncodeableBytesMixin, HashableBytesMixin):
+    def __str__(self):
+        return '<Digest: "{}">'.format(self.hex)
+
 class Box():
     PUBLIC_KEY_SIZE = _libsodium.crypto_box_publickeybytes()
     SECRET_KEY_SIZE = _libsodium.crypto_box_secretkeybytes()
@@ -220,7 +242,7 @@ class Signing():
         
     @staticmethod
     def generate_seed():
-        return Key(randombytes(Signing.SEED_SIZE))
+        return Seed(randombytes(Signing.SEED_SIZE))
     
     @staticmethod
     def generate_keypair(seed=None):
@@ -252,10 +274,10 @@ class Signing():
             self._sign_key = Key(sign_key)
         if seed is None:
             self._seed = None
-        elif isinstance(seed, Key):
+        elif isinstance(seed, Seed):
             self._seed = seed
         else:
-            self._seed = Key(seed)
+            self._seed = Seed(seed)
 
     @property
     def verify_key(self):
@@ -336,6 +358,117 @@ class Authentication():
                                                  self._key)
         return message
 
+class Hash():
+    name = None
+    size = None     
+    algorithm = None  
+    
+    def __bytes__(self):
+        return self.digest
+    
+class SHA256(Hash):
+    name = 'sha256'
+    size = _libsodium.crypto_hash_sha256_bytes()
+    
+    class State(ctypes.Structure):
+        _fields_ = [('state', ctypes.c_uint * 8),
+                    ('count', ctypes.c_uint * 2),
+                    ('buffer', ctypes.c_char * 64)]  
+
+    State.size = ctypes.sizeof(State)
+    
+    def __init__(self, inital=None):
+        self._state = SHA256.State()
+        self._pointer = ctypes.pointer(self._state)
+        _libsodium.crypto_hash_sha256_init(self._pointer)
+        if inital: self.update(inital)
+    
+    def update(self, chunk):
+        _libsodium.crypto_hash_sha256_update(self._pointer, chunk, len(chunk))
+    
+    @property
+    def digest(self):
+        state = SHA256.State()
+        pointer = ctypes.pointer(state)
+        ctypes.memmove(pointer, self._pointer, SHA256.State.size)
+        digest = ctypes.create_string_buffer(SHA256.size)
+        _libsodium.crypto_hash_sha256_final(pointer, digest)
+        return Digest(digest.raw)
+    
+class SHA512(Hash):
+    name = 'sha512'
+    size = _libsodium.crypto_hash_sha512_bytes()
+    
+    class State(ctypes.Structure):
+        _fields_ = [('state', ctypes.c_uint64 * 8),
+                    ('count', ctypes.c_uint64 * 2),
+                    ('buffer', ctypes.c_char * 128)]  
+
+    State.size = ctypes.sizeof(State)
+    
+    def __init__(self, inital=None):
+        self._state = SHA512.State()
+        self._pointer = ctypes.pointer(self._state)
+        _libsodium.crypto_hash_sha512_init(self._pointer)
+        if inital: self.update(inital)
+    
+    def update(self, chunk):
+        _libsodium.crypto_hash_sha512_update(self._pointer, chunk, len(chunk))
+    
+    @property
+    def digest(self):
+        state = SHA512.State()
+        pointer = ctypes.pointer(state)
+        ctypes.memmove(pointer, self._pointer, SHA512.State.size)
+        digest = ctypes.create_string_buffer(SHA512.size)
+        _libsodium.crypto_hash_sha512_final(pointer, digest)
+        return Digest(digest.raw)
+
+class BLAKE2(Hash):
+    name = 'blake2'
+    min_size = _libsodium.crypto_generichash_blake2b_bytes_min()
+    max_size = _libsodium.crypto_generichash_blake2b_bytes_max()
+    default_size = _libsodium.crypto_generichash_blake2b_bytes()
+    size = range(min_size, max_size + 1)
+    min_key_size = _libsodium.crypto_generichash_blake2b_keybytes_min()
+    max_key_size = _libsodium.crypto_generichash_blake2b_keybytes_max()
+    default_key_size = _libsodium.crypto_generichash_blake2b_keybytes()
+    key_size = range(min_key_size, max_key_size + 1)
+    SALT_SIZE = _libsodium.crypto_generichash_blake2b_saltbytes()
+    PERSONAL_SIZE = _libsodium.crypto_generichash_blake2b_personalbytes()
+    
+def hash_sha256(buffer):
+    digest = ctypes.create_string_buffer(SHA256.size)
+    _libsodium.crypto_hash_sha256(digest, buffer, len(buffer))
+    return Digest(digest.raw)
+
+def hash_sha512(buffer):
+    digest = ctypes.create_string_buffer(SHA512.size)
+    _libsodium.crypto_hash_sha512(digest, buffer, len(buffer))
+    return Digest(digest.raw)
+
+def hash_blake2(buffer, size=BLAKE2.default_size, key=None, salt=None,
+                personal=None):
+    assert size in BLAKE2.size
+    digest = ctypes.create_string_buffer(size)
+    if key:
+        key_length = len(key)
+        assert key_length in BLAKE2.key_size
+    else:
+        key_length = 0    
+    if salt and personal:
+        assert len(salt) == BLAKE2.SALT_SIZE
+        assert len(personal) == BLAKE2.PERSONAL_SIZE
+        _libsodium.crypto_generichash_blake2b_salt_personal(digest, size,
+                                                            buffer,
+                                                            len(buffer),
+                                                            key, key_length,
+                                                            salt, personal)
+    else:
+        _libsodium.crypto_generichash_blake2b(digest, size, buffer,
+                                              len(buffer), key, key_length) 
+    return Digest(digest.raw)
+
 if __name__ == '__main__':
     # Public Key Cryptography
     pbob, sbob = Box.generate_keypair()
@@ -383,7 +516,7 @@ if __name__ == '__main__':
     
     # HMAC based Authentication
     secret = Authentication.generate_key()
-       
+          
     bob = Authentication(secret)
     alice = Authentication(secret)
     
@@ -392,3 +525,24 @@ if __name__ == '__main__':
     
     message = alice.auth(b'Hello Bob!')
     print(bob.verify(message))
+    
+    
+    # Hashing
+    import hashlib
+    
+    msg = b'Hello World!'
+    
+    sha256 = SHA256()
+    sha256.update(msg)
+    
+    print(sha256.digest)   
+    print(hashlib.sha256(msg).hexdigest())
+    
+    sha512 = SHA512()
+    sha512.update(msg)
+     
+    print(sha512.digest)
+    print(hashlib.sha512(msg).hexdigest())
+    
+    print(hash_blake2(msg))
+    
