@@ -182,35 +182,35 @@ def unpack(buffer, pointer=0):
             pointer += 1
         elif constructor == 194:
             data = buffer[pointer:pointer + 2]
-            structure = primitves.struct_uint16.unpack(data)[0]
+            structure = primitives.struct_uint16.unpack(data)[0]
             pointer += 2
         elif constructor == 195:
             data = buffer[pointer:pointer + 2]
-            structure = -primitves.struct_uint16.unpack(data)[0]
+            structure = -primitives.struct_uint16.unpack(data)[0]
             pointer += 2
         elif constructor == 196:
             data = buffer[pointer:pointer + 4]
-            structure = primitves.struct_uint32.unpack(data)[0]
+            structure = primitives.struct_uint32.unpack(data)[0]
             pointer += 4
         elif constructor == 197:
             data = buffer[pointer:pointer + 4]
-            structure = -primitves.struct_uint32.unpack(data)[0]
+            structure = -primitives.struct_uint32.unpack(data)[0]
             pointer += 4
         elif constructor == 198:
             data = buffer[pointer:pointer + 8]
-            structure = primitves.struct_uint64.unpack(data)[0]
+            structure = primitives.struct_uint64.unpack(data)[0]
             pointer += 8
         elif constructor == 199:
             data = buffer[pointer:pointer + 8]
-            structure = -primitves.struct_uint64.unpack(data)[0]
+            structure = -primitives.struct_uint64.unpack(data)[0]
             pointer += 8
         elif constructor == 200:
             data = buffer[pointer:pointer + 4]
-            structure = primitves.struct_float.unpack(data)[0]
+            structure = primitives.struct_float.unpack(data)[0]
             pointer += 4
         elif constructor == 201:
             data = buffer[pointer:pointer + 8]
-            structure = primitves.struct_double.unpack(data)[0]
+            structure = primitives.struct_double.unpack(data)[0]
             pointer += 8
         elif constructor == 202:
             pointer, structure = primitives.unpack_decimal32(buffer, pointer)
@@ -304,4 +304,4 @@ if __name__ == '__main__':
     message = encode({'compact' : True, 'schema' : 0})
     print(message)
     print(decode(message))
-    
+
