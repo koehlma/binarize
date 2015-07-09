@@ -21,7 +21,7 @@ import sys
 import uuid
 
 __path__ = os.path.dirname(__file__)
-sys.path.insert(0, os.path.join(__path__, '..', 'src'))
+sys.path.insert(0, os.path.join(__path__, os.pardir))
 
 import binarize
 
@@ -36,7 +36,7 @@ class Test1(binarize.Structure):
 
 class Test2(Test1):
     field4 = TestEnum
-    
+
 class Test3(binarize.Structure):
     test2 = Test2
     abc = binarize.STRING(size=3)
