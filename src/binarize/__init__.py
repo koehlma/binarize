@@ -16,6 +16,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from .primitives import *
+from .dynamic import *
 from .structure import *
 from .type import *
 from .version import *
