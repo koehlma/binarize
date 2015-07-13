@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-'''
+"""
 Binarize - Primitive Data Types
-'''
+"""
 
 import datetime
 import decimal
@@ -43,15 +43,16 @@ __all__ = ['Primitive',
            'unpack_uuid', 'pack_uuid', 'unpack_ipv4', 'pack_ipv4',
            'unpack_ipv6', 'pack_ipv6', 'unpack_date', 'pack_date',
            'unpack_time', 'pack_time', 'unpack_bytes', 'pack_bytes',
-           'unpack_string', 'pack_string', 'unpack_boolean', 'pack_boolean', 
+           'unpack_string', 'pack_string', 'unpack_boolean', 'pack_boolean',
            'SINT8', 'UINT8', 'SINT16', 'UINT16', 'SINT32', 'UINT32', 'SINT64',
            'UINT64', 'FLOAT', 'DOUBLE', 'DECIMAL32', 'DECIMAL64', 'DECIMAL128',
            'VARINT', 'SIZE', 'UUID', 'IPV4', 'IPV6', 'DATE', 'TIME', 'BYTES',
            'STRING', 'BOOLEAN']
 
+
 class Primitive(Type):
     __slots__ = ['name', 'unpack', 'pack', 'size', 'options', 'base']
-    
+
     def __init__(self, name, unpack, pack, size=None, options=None, base=None):
         self.name = name
         self.unpack = unpack
@@ -66,16 +67,16 @@ class Primitive(Type):
         unpack = functools.partial(self.unpack, **new_options)
         functools.update_wrapper(unpack, self.unpack)
         pack = functools.partial(self.pack, **new_options)
-        functools.update_wrapper(pack, self.pack)        
+        functools.update_wrapper(pack, self.pack)
         return Primitive(self.name, unpack, pack, self.size, new_options,
                          self.base or self)
-    
+
     def __eq__(self, other):
         assert isinstance(other, Primitive)
         if self.base is None and other.base is None:
             return id(self) == id(other)
         return self.base == other.base and self.options == other.options
-    
+
     def __str__(self):
         if self.options:
             options = ', '.join('{}={}'.format(name, value)
@@ -95,125 +96,106 @@ struct_uint64 = struct.Struct('!Q')
 struct_float = struct.Struct('!f')
 struct_double = struct.Struct('!d')
 
+
 def unpack_sint8(data, pointer=0):
-    '''
-    Unpacks a signed 8-bit integer.
-    '''
+    """Unpack a signed 8-bit integer."""
     return pointer + 1, struct_sint8.unpack(data[pointer:pointer + 1])[0]
 
+
 def pack_sint8(integer):
-    '''
-    Packs a signed 8-bit integer.
-    '''
+    """Pack a signed 8-bit integer."""
     yield struct_sint8.pack(integer)
 
+
 def unpack_uint8(data, pointer=0):
-    '''
-    Unpacks an unsigned 8-bit integer.
-    '''
+    """Unpack an unsigned 8-bit integer."""
     return pointer + 1, struct_uint8.unpack(data[pointer:pointer + 1])[0]
 
+
 def pack_uint8(integer):
-    '''
-    Packs an unsigned 8-bit integer.
-    '''
+    """Pack an unsigned 8-bit integer."""
     yield struct_uint8.pack(integer)
 
+
 def unpack_sint16(data, pointer=0):
-    '''
-    Unpacks a signed 16-bit integer.
-    '''
+    """Unpack a signed 16-bit integer."""
     return pointer + 2, struct_sint16.unpack(data[pointer:pointer + 2])[0]
-    
+
+
 def pack_sint16(integer):
-    '''
-    Packs a signed 16-bit integer.
-    '''
+    """Pack a signed 16-bit integer."""
     yield struct_sint16.pack(integer)
 
+
 def unpack_uint16(data, pointer=0):
-    '''
-    Unpacks an unsigned 16-bit integer.
-    '''
+    """Unpack an unsigned 16-bit integer."""
     return pointer + 2, struct_uint16.unpack(data[pointer:pointer + 2])[0]
 
+
 def pack_uint16(integer):
-    '''
-    Packs an unsigned 16-bit integer.
-    '''
+    """Pack an unsigned 16-bit integer."""
     yield struct_uint16.pack(integer)
 
+
 def unpack_sint32(data, pointer=0):
-    '''
-    Unpacks a signed 32-bit integer.
-    '''
+    """Unpack a signed 32-bit integer."""
     return pointer + 4, struct_sint32.unpack(data[pointer:pointer + 4])[0]
 
+
 def pack_sint32(integer):
-    '''
-    Packs a signed 32-bit integer.
-    '''
+    """Pack a signed 32-bit integer."""
     yield struct_sint32.pack(integer)
 
+
 def unpack_uint32(data, pointer=0):
-    '''
-    Unpacks an unsigned 32-bit integer.
-    '''
+    """Unpack an unsigned 32-bit integer."""
     return pointer + 4, struct_uint32.unpack(data[pointer:pointer + 4])[0]
 
+
 def pack_uint32(integer):
-    '''
-    Packs an unsigned 32-bit integer.
-    '''
+    """Pack an unsigned 32-bit integer."""
     yield struct_uint32.pack(integer)
 
+
 def unpack_sint64(data, pointer=0):
-    '''
-    Unpacks a signed 64-bit integer.
-    '''
+    """Unpack a signed 64-bit integer."""
     return pointer + 8, struct_sint64.unpack(data[pointer:pointer + 8])[0]
-    
+
+
 def pack_sint64(integer):
-    '''
-    Packs a signed 64-bit integer.
-    '''
+    """Pack a signed 64-bit integer."""
     yield struct_sint64.pack(integer)
 
+
 def unpack_uint64(data, pointer=0):
-    '''
-    Unpacks an unsigned 64-bit integer.
-    '''
+    """Unpack an unsigned 64-bit integer."""
     return pointer + 8, struct_uint64.unpack(data[pointer:pointer + 8])[0]
-    
+
+
 def pack_uint64(integer):
-    '''
-    Packs an unsigned 64-bit integer.
-    '''
+    """Pack an unsigned 64-bit integer."""
     yield struct_uint64.pack(integer)
 
+
 def unpack_float(data, pointer=0):
-    '''
-    Unpacks an IEEE 754 single precision float. 
-    '''
+    """Unpack an IEEE 754 single precision float."""
     return pointer + 4, struct_float.unpack(data[pointer:pointer + 4])[0]
-    
+
+
 def pack_float(number):
-    '''
-    Packs an IEEE 754 single precision float.
-    '''
+    """Pack an IEEE 754 single precision float."""
     yield struct_float.pack(number)
-   
+
+
 def unpack_double(data, pointer=0):
-    '''
-    Unpacks an IEEE 754 double precision float. 
-    '''
+    """Unpack an IEEE 754 double precision float."""
     return pointer + 8, struct_double.unpack(data[pointer:pointer + 8])[0]
 
+
 def pack_double(number):
-    '''
-    Packs an IEEE 754 double precision float.
-    '''
+    """Pack an IEEE 754 double precision float."""
     yield struct_double.pack(number)
+
 
 def _decimal_unpack_special(sign, integer):
     if (integer >> 3) & 1:
@@ -226,7 +208,8 @@ def _decimal_unpack_special(sign, integer):
             return decimal.Decimal('-Infinity')
         else:
             return decimal.Decimal('Infinity')
-            
+
+
 def _decimal_pack_special(decimal, size):
     if decimal.is_infinite():
         if decimal.is_signed():
@@ -241,10 +224,9 @@ def _decimal_pack_special(decimal, size):
     else:
         raise ValueError()
 
+
 def unpack_decimal32(data, pointer=0):
-    '''
-    Unpacks an IEEE 754-2008 32-bit decimal floating point number.
-    '''
+    """Unpack an IEEE 754-2008 32-bit decimal floating point number."""
     integer = int.from_bytes(data[pointer:pointer + 4], 'big')
     sign = integer >> 31
     if (integer >> 29) & 3 == 3:
@@ -257,11 +239,10 @@ def unpack_decimal32(data, pointer=0):
         significand = integer & 8388607
     digits = tuple(map(int, str(significand)))
     return pointer + 4, decimal.Decimal((sign, digits, exponent))
-    
+
+
 def pack_decimal32(decimal):
-    '''
-    Packs an IEEE 754-2008 32-bit decimal floating point number.
-    '''
+    """Pack an IEEE 754-2008 32-bit decimal floating point number."""
     if not decimal.is_finite():
         yield _decimal_pack_special(decimal, 4)
         return
@@ -276,10 +257,9 @@ def pack_decimal32(decimal):
         yield ((sign << 31) | ((exponent + 101) << 23) |
                significand).to_bytes(4, 'big')
 
+
 def unpack_decimal64(data, pointer=0):
-    '''
-    Unpacks an IEEE 754-2008 64-bit decimal floating point number.
-    '''
+    """Unpack an IEEE 754-2008 64-bit decimal floating point number."""
     integer = int.from_bytes(data[pointer:pointer + 8], 'big')
     sign = integer >> 63
     if (integer >> 61) & 3 == 3:
@@ -292,11 +272,10 @@ def unpack_decimal64(data, pointer=0):
         significand = integer & 9007199254740991
     digits = tuple(map(int, str(significand)))
     return pointer + 8, decimal.Decimal((sign, digits, exponent))
-    
+
+
 def pack_decimal64(decimal):
-    '''
-    Packs an IEEE 754-2008 64-bit decimal floating point number.
-    '''
+    """Pack an IEEE 754-2008 64-bit decimal floating point number."""
     if not decimal.is_finite():
         yield _decimal_pack_special(decimal, 8)
         return
@@ -311,10 +290,9 @@ def pack_decimal64(decimal):
         yield ((sign << 63) | ((exponent + 398) << 53) |
                significand).to_bytes(8, 'big')
 
+
 def unpack_decimal128(data, pointer=0):
-    '''
-    Unpacks an IEEE 754-2008 128-bit decimal floating point number.
-    '''
+    """Unpack an IEEE 754-2008 128-bit decimal floating point number."""
     integer = int.from_bytes(data[pointer:pointer + 16], 'big')
     sign = integer >> 127
     if (integer >> 125) & 3 == 3:
@@ -328,11 +306,10 @@ def unpack_decimal128(data, pointer=0):
         significand = integer & 10384593717069655257060992658440191
     digits = tuple(map(int, str(significand)))
     return pointer + 16, decimal.Decimal((sign, digits, exponent))
-    
+
+
 def pack_decimal128(decimal):
-    '''
-    Packs an IEEE 754-2008 128-bit decimal floating point number.
-    '''
+    """Pack an IEEE 754-2008 128-bit decimal floating point number."""
     if not decimal.is_finite():
         yield _decimal_pack_special(decimal, 16)
         return
@@ -348,10 +325,9 @@ def pack_decimal128(decimal):
         yield ((sign << 127) | ((exponent + 6176) << 113) |
                significand).to_bytes(16, byteorder='big')
 
+
 def unpack_varint(data, pointer=0):
-    '''
-    Unpacks a variable length integer.
-    '''
+    """Unpack a variable length integer."""
     integer, shift = 0, 0
     while True:
         integer |= (data[pointer] & 127) << shift
@@ -361,49 +337,50 @@ def unpack_varint(data, pointer=0):
         shift += 7
     return pointer + 1, integer
 
+
 def pack_varint(integer):
-    '''
-    Packs a variable length integer.
-    '''
+    """Pack a variable length integer."""
     while integer > 127:
         yield bytes([integer & 127 | 128])
         integer >>= 7
     yield bytes([integer])
 
+
 def _unpack_size_8(data, pointer=0):
-    size = (int.from_bytes(data[pointer:pointer + 2], 'big') & 8191) + 128 
+    size = (int.from_bytes(data[pointer:pointer + 2], 'big') & 8191) + 128
     return pointer + 2, size
+
 
 def _unpack_size_16(data, pointer=0):
     size = (int.from_bytes(data[pointer:pointer + 3], 'big') & 2097151) + 8320
     return pointer + 3, size
 
+
 def _unpack_size_32(data, pointer=0):
     size = (int.from_bytes(data[pointer:pointer + 5], 'big') &
-              137438953471) + 2105472
+            137438953471) + 2105472
     return pointer + 5, size
+
 
 def _unpack_size_64(data, pointer=0):
     size = (int.from_bytes(data[pointer:pointer + 9], 'big') &
-              590295810358705651711) + 137441058944
+            590295810358705651711) + 137441058944
     return pointer + 9, size
 
 _SIZES = [_unpack_size_8, _unpack_size_16, _unpack_size_32,
           _unpack_size_64]
 
+
 def unpack_size(data, pointer=0):
-    '''
-    Unpacks a size.
-    '''
+    """Unpack a size."""
     if data[pointer] >> 7:
         return _SIZES[(data[pointer] >> 5) & 3](data, pointer)
     else:
         return pointer + 1, data[pointer]
 
+
 def pack_size(size):
-    '''
-    Packs a size.
-    '''
+    """Pack a size."""
     if size < 128:
         yield bytes([size])
     elif size < 8320:
@@ -418,63 +395,54 @@ def pack_size(size):
     else:
         raise ValueError()
 
+
 def unpack_uuid(data, pointer=0):
-    '''
-    Unpacks an UUID.
-    '''
+    """Unpack an UUID."""
     return pointer + 16, uuid.UUID(bytes=data[pointer:pointer + 16])
 
+
 def pack_uuid(uuid):
-    '''
-    Packs an UUID.
-    '''
+    """Pack an UUID."""
     yield uuid.bytes
 
+
 def unpack_ipv4(data, pointer=0):
-    '''
-    Unpacks an IPv4 address.
-    '''
+    """Unpack an IPv4 address."""
     return pointer + 4, ipaddress.IPv4Address(data[pointer:pointer + 4])
 
+
 def pack_ipv4(ipv4address):
-    '''
-    Packs an IPv4 address.
-    '''
+    """Pack an IPv4 address."""
     yield ipv4address.packed
 
+
 def unpack_ipv6(data, pointer=0):
-    '''
-    Unpacks an IPv6 address.
-    '''
+    """Unpack an IPv6 address."""
     return pointer + 16, ipaddress.IPv6Address(data[pointer:pointer + 16])
-    
+
+
 def pack_ipv6(ipv6address):
-    '''
-    Packs an IPv4 address.
-    '''
+    """Pack an IPv4 address."""
     yield ipv6address.packed
 
+
 def unpack_date(data, pointer=0):
-    '''
-    Unpacks a date.
-    '''
+    """Unpack a date."""
     integer = int.from_bytes(data[pointer:pointer + 3], 'big')
     day = integer >> 19
     month = (integer >> 15) & 15
     year = (integer >> 1) & 16383
     return pointer + 3, datetime.date(year, month, day)
 
+
 def pack_date(date):
-    '''
-    Packs a date.
-    '''
+    """Pack a date."""
     yield ((date.day << 19) | (date.month << 15) | (date.year << 1)
            ).to_bytes(3, 'big')
 
+
 def unpack_time(data, pointer=0):
-    '''
-    Unpacks a time.
-    '''
+    """Unpack a time."""
     integer = int.from_bytes(data[pointer:pointer + 3], 'big')
     hour = integer >> 19
     minute = (integer >> 13) & 63
@@ -496,14 +464,15 @@ def unpack_time(data, pointer=0):
         tzinfo = None
     return pointer, datetime.time(hour, minute, second, microsecond, tzinfo)
 
+
 def pack_time(time):
-    '''
-    Packs a time.
-    '''
+    """Pack a time."""
     integer = (time.hour << 19) | (time.minute << 13) | (time.second << 7)
     size = 3
-    if time.microsecond: integer |= 1 << 6
-    if time.tzinfo: integer |= 1 << 5
+    if time.microsecond:
+        integer |= 1 << 6
+    if time.tzinfo:
+        integer |= 1 << 5
     if time.microsecond:
         integer <<= 16
         integer |= time.microsecond
@@ -519,18 +488,16 @@ def pack_time(time):
             size += 2
     yield integer.to_bytes(size, 'big')
 
+
 def unpack_bytes(data, pointer=0, size=-1, fill=b'\x00'):
-    '''
-    Unpacks Bytes.
-    '''
+    """Unpack Bytes."""
     if size < 0:
         pointer, size = unpack_size(data, pointer)
     return pointer + size, data[pointer:pointer + size]
 
+
 def pack_bytes(bytes_, size=-1, fill=b'\x00'):
-    '''
-    Packs Bytes.
-    '''
+    """Pack Bytes."""
     if size < 0:
         yield from pack_size(len(bytes_))
         yield bytes_
@@ -541,31 +508,27 @@ def pack_bytes(bytes_, size=-1, fill=b'\x00'):
         yield bytes_
         yield fill * missing
 
+
 def unpack_string(data, pointer=0, size=-1, fill=b' ', encoding='utf-8'):
-    '''
-    Unpacks a string.
-    '''
+    """Unpack a string."""
     pointer, bytes_ = unpack_bytes(data, pointer, size)
     return pointer, bytes_.decode(encoding)
 
+
 def pack_string(string, size=-1, fill=b' ', encoding='utf-8'):
-    '''
-    Packs a string.
-    '''
+    """Pack a string."""
     yield from pack_bytes(string.encode(encoding), size, fill)
 
+
 def unpack_boolean(data, pointer=0):
-    '''
-    Unpacks a boolean value.
-    '''
+    """Unpack a boolean value."""
     if data[pointer]:
         return pointer + 1, True
     return pointer + 1, False
 
+
 def pack_boolean(boolean):
-    '''
-    Packs a boolean value.
-    '''
+    """Pack a boolean value."""
     if boolean:
         yield b'\x01'
     else:

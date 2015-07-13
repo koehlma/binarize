@@ -22,8 +22,10 @@ import uuid
 
 from . import primitives
 
+
 class Control(enum.Enum):
     END = 0
+
 
 def pack(structure):
     if isinstance(structure, bool):
@@ -141,8 +143,10 @@ def pack(structure):
         yield b'\xd4'
         yield structure.bytes
 
+
 def encode(structure):
     return b''.join(pack(structure))
+
 
 def unpack(buffer, pointer=0):
     constructor = buffer[pointer]
@@ -261,17 +265,20 @@ def unpack(buffer, pointer=0):
             structure = buffer[pointer:pointer + length].decode('utf-8')
             pointer += length
         elif constructor == 217:
-            length = struct_uint16.unpack(buffer[pointer:pointer + 2])[0]
+            length = primitives.struct_uint16.unpack(
+                buffer[pointer:pointer + 2])[0]
             pointer += 2
             structure = buffer[pointer:pointer + length].decode('utf-8')
             pointer += length
         elif constructor == 218:
-            length = struct_uint32.unpack(buffer[pointer:pointer + 4])[0]
+            length = primitives.struct_uint32.unpack(
+                buffer[pointer:pointer + 4])[0]
             pointer += 4
             structure = buffer[pointer:pointer + length].decode('utf-8')
             pointer += length
         elif constructor == 219:
-            length = struct_uint32.unpack(buffer[pointer:pointer + 8])[0]
+            length = primitives.struct_uint32.unpack(
+                buffer[pointer:pointer + 8])[0]
             pointer += 8
             structure = buffer[pointer:pointer + length].decode('utf-8')
             pointer += length
@@ -281,21 +288,25 @@ def unpack(buffer, pointer=0):
             structure = buffer[pointer:pointer + length]
             pointer += length
         elif constructor == 221:
-            length = struct_uint16.unpack(buffer[pointer:pointer + 2])[0]
+            length = primitives.struct_uint16.unpack(
+                buffer[pointer:pointer + 2])[0]
             pointer += 2
             structure = buffer[pointer:pointer + length]
             pointer += length
         elif constructor == 222:
-            length = struct_uint32.unpack(buffer[pointer:pointer + 4])[0]
+            length = primitives.struct_uint32.unpack(
+                buffer[pointer:pointer + 4])[0]
             pointer += 4
             structure = buffer[pointer:pointer + length]
             pointer += length
         elif constructor == 223:
-            length = struct_uint32.unpack(buffer[pointer:pointer + 8])[0]
+            length = primitives.struct_uint32.unpack(
+                buffer[pointer:pointer + 8])[0]
             pointer += 8
             structure = buffer[pointer:pointer + length]
             pointer += length
     return pointer, structure
+
 
 def decode(buffer):
     return unpack(buffer)[1]
